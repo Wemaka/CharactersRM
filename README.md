@@ -28,3 +28,8 @@ and Jetpack Compose. It fetches data from the <a href="https://rickandmortyapi.c
 ## Screenshots
 
 <p align="center"><img src="img-rm/screen_app.png"  alt="Screenshots app"/></p>
+
+## Demonstration
+
+https://github.com/user-attachments/assets/68a7a713-34b3-4545-a745-53f5516abc56
+
