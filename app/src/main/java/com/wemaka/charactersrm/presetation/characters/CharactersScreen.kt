@@ -2,6 +2,7 @@ package com.wemaka.charactersrm.presetation.characters
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -62,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -112,7 +115,6 @@ fun CharactersContent(
 ) {
     var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    val refreshState = rememberPullToRefreshState()
     val listState = rememberLazyListState()
     val shouldLoadMore = remember(state.isLoading, state.isEndReached) {
         derivedStateOf {
@@ -191,7 +193,7 @@ fun CharactersContent(
         ) {
             PullToRefreshBox(
                 modifier = Modifier.fillMaxSize(),
-                state = refreshState,
+                state = rememberPullToRefreshState(),
                 isRefreshing = isRefreshing,
                 onRefresh = { onEvent(CharactersEvent.RefreshLoadCharacters) }
             ) {
@@ -202,21 +204,23 @@ fun CharactersContent(
                     navController = navController
                 )
 
-                ErrorBox(
-                    isLoading = state.isLoading,
-                    loadError = state.loadError
-                )
+                if (state.charactersList.isEmpty()) {
+                    ErrorBox(
+                        isLoading = state.isLoading,
+                        loadError = state.loadError
+                    )
+                }
             }
 
             AnimatedVisibility(
                 visible = state.isFiltersSectionVisible,
                 enter = expandVertically(
                     expandFrom = Alignment.Top,
-                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()
                 ),
                 exit = slideOutVertically(
                     targetOffsetY = { -it },
-                    animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec()
+                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()
                 )
             ) {
                 FiltersMenu(
@@ -233,7 +237,7 @@ fun CharactersContent(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TopSearchBar(
     modifier: Modifier = Modifier,
@@ -244,6 +248,7 @@ fun TopSearchBar(
 ) {
     val textFieldState = rememberTextFieldState("")
     val searchBarState = rememberSearchBarState()
+    var rotated by remember { mutableStateOf(false) }
 
     Column {
         TopAppBar(
@@ -283,9 +288,19 @@ fun TopSearchBar(
             },
             actions = {
                 IconButton(
-                    onClick = { onAction(CharactersEvent.ToggleFiltersSection) }
+                    onClick = {
+                        rotated = !rotated
+                        onAction(CharactersEvent.ToggleFiltersSection)
+                    }
                 ) {
                     Icon(
+                        modifier = Modifier
+                            .rotate(
+                                animateFloatAsState(
+                                    targetValue = if (rotated) 180f else 0f,
+                                    animationSpec = MaterialTheme.motionScheme.fastSpatialSpec()
+                                ).value
+                            ),
                         painter = painterResource(R.drawable.ic_keyboard_arrow_down),
                         contentDescription = null
                     )
@@ -314,7 +329,20 @@ fun CharacterGrid(
     ) {
         val rowCount = if (list.size % 2 == 0) list.size / 2 else list.size / 2 + 1
 
-        items(rowCount) {
+        items(
+            items = list
+        ) {
+
+        }
+
+        items(
+            count = rowCount,
+            key = { index ->
+                val firstId = list.getOrNull(index * 2)?.id ?: 0
+                val secondId = list.getOrNull(index * 2 + 1)?.id ?: 0
+                "$firstId-$secondId"
+            }
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(gap)

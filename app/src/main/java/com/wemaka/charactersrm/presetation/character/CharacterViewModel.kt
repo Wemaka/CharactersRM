@@ -23,7 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CharacterViewModel @Inject constructor(
     private val getCharacter: GetCharacter
-): ViewModel() {
+) : ViewModel() {
 
     var state by mutableStateOf(CharacterState())
         private set
@@ -31,6 +31,15 @@ class CharacterViewModel @Inject constructor(
     fun onEvent(event: CharacterEvent) {
         when (event) {
             is CharacterEvent.LoadCharacter -> getCharacterDetail(event.id)
+            is CharacterEvent.CalcDominantColor -> viewModelScope.launch {
+                val bmp = (event.drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+                Palette.from(bmp).generate { palette ->
+                    palette?.dominantSwatch?.rgb?.let { colorValue ->
+                        event.onFinish(Color(colorValue))
+                    }
+                }
+            }
         }
     }
 
@@ -49,18 +58,6 @@ class CharacterViewModel @Inject constructor(
                     state.copy(
                         loadError = "Character not found"
                     )
-                }
-            }
-        }
-    }
-
-    fun calcDominantColor(drawable: Drawable, onFinish: (Color) -> Unit) {
-        viewModelScope.launch {
-            val bmp = (drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)
-
-            Palette.from(bmp).generate { palette ->
-                palette?.dominantSwatch?.rgb?.let { colorValue ->
-                    onFinish(Color(colorValue))
                 }
             }
         }

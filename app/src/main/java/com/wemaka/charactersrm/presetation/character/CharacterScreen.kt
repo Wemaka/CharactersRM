@@ -81,7 +81,6 @@ fun CharacterScreen(
     CharacterContent(
         navController = navController,
         onEvent = viewModel::onEvent,
-        getColors = viewModel::calcDominantColor,
         state = viewModel.state,
         characterId = characterId
     )
@@ -92,7 +91,6 @@ fun CharacterScreen(
 fun CharacterContent(
     navController: NavController,
     onEvent: (CharacterEvent) -> Unit,
-    getColors: (Drawable, (Color) -> Unit) -> Unit,
     state: CharacterState,
     characterId: Int
 ) {
@@ -161,9 +159,9 @@ fun CharacterContent(
                             .fillMaxWidth()
                             .height(300.dp),
                         successImage = { image ->
-                            getColors(image) { newColor ->
-                                dominantColor = newColor
-                            }
+                            onEvent(CharacterEvent.CalcDominantColor(image) { color ->
+                                dominantColor = color
+                            })
                         },
                         name = character?.name,
                         image = character?.image,
@@ -184,10 +182,12 @@ fun CharacterContent(
                     )
                 }
 
-                ErrorBox(
-                    isLoading = state.isLoading,
-                    loadError = state.loadError
-                )
+                if (character == null) {
+                    ErrorBox(
+                        isLoading = state.isLoading,
+                        loadError = state.loadError
+                    )
+                }
             }
         }
     }
@@ -440,7 +440,6 @@ fun PreviewCharacterContent() {
     CharacterContent(
         navController = rememberNavController(),
         onEvent = {},
-        getColors = {} as (Drawable, (Color) -> Unit) -> Unit,
         state = CharacterState(
             isLoading = false,
             character = Character(

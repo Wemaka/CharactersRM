@@ -35,10 +35,6 @@ class CharactersViewModel @Inject constructor(
         extraBufferCapacity = 1
     )
 
-    private var cachedCharacterList = listOf<CharacterItem>()
-
-    private var isSearchStarting = true
-
     var state by mutableStateOf(CharactersState())
         private set
 
